@@ -35,7 +35,6 @@
 - (void)setPhotoImage:(UIImage *)photoImage
 {
     [self.indicatorView stopAnimating];
-    [self.indicatorView setHidden:YES];
     
     self.photoImageView.image = photoImage;
 }
@@ -46,7 +45,6 @@
     
     if(self.photoURL)
     {
-        [self.indicatorView setHidden:NO];
         [self.indicatorView startAnimating];
         
         NSURLRequest *request = [NSURLRequest requestWithURL:self.photoURL];

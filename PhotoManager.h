@@ -10,12 +10,10 @@
 
 @interface PhotoManager : NSObject
 
-+ (instancetype) sharedInstance;
++ (instancetype)sharedInstance;
 
-- (void) fetchPhotosWithTags:(NSString *)tags
+- (void)fetchPhotosWithTags:(NSString *)tags
                      success:(void(^)(id responseObject))handler
                         fail:(void(^)(NSError *error))error;
-
-- (NSURL *)URLforDownloadingPhoto:(NSDictionary *)photo;
 
 @end

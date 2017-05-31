@@ -11,7 +11,7 @@
 
 @implementation PhotoManager
 
-+(instancetype) sharedInstance
++(instancetype)sharedInstance
 {
     static PhotoManager *_instance = nil;
     
@@ -24,7 +24,7 @@
     return _instance;
 }
 
-- (void) fetchPhotosWithTags:(NSString *)tags
+- (void)fetchPhotosWithTags:(NSString *)tags
                      success:(void(^)(id responseObject))successHandler
                         fail:(void(^)(NSError *error))failHandler
 {
@@ -49,11 +49,6 @@
     }];
     
     [task resume];
-}
-
-- (NSURL *)URLforDownloadingPhoto:(NSDictionary *)photo
-{
-    return [FlickrProvider getURLforDownloadingPhoto:photo];
 }
 
 @end

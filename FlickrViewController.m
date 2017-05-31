@@ -8,9 +8,9 @@
 
 #import "FlickrViewController.h"
 #import "PhotoManager.h"
-#import "FlickrProvider.h"  // избавиться от него!
 #import "PhotoCell.h"
 #import "DetailPhotoViewController.h"
+#import "FlickrPhotoObject.h"
 
 static NSString* const key_photoID = @"photoID";
 static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
@@ -20,6 +20,7 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (weak, nonatomic) IBOutlet UITextField *searchTextField;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *sortMethod;
+@property (weak, nonatomic) IBOutlet UIActivityIndicatorView *searchIndicator;
 
 @property (strong, nonatomic) NSArray *photosArray;
 @property (strong, nonatomic) PhotoManager *photoManager;
@@ -44,35 +45,29 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 
 - (void)setPhotosArray:(NSArray *)photosArray
 {
+    [self.searchIndicator stopAnimating];
+    
     _photosArray = photosArray;
-    
-//    dispatch_sync(dispatch_get_main_queue(), ^{
-//       [self.tableView reloadData];
-//    });
-    
-    [self.tableView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+    [self.tableView reloadData];
 }
 
 - (IBAction)searchButtonPressed:(id)sender
 {
+    self.photosArray = nil;
+    
     NSString *searchingString = [self.searchTextField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     
+    if(0 == searchingString.length)
+    {
+        return;
+    }
+    
+    [self.searchIndicator startAnimating];
+    
     [self.photoManager fetchPhotosWithTags:searchingString success:^(id responseObject) {
-
-        NSArray *sortedArray = nil;
-        
-        switch (self.sortMethod.selectedSegmentIndex) {
-            case 0:
-                sortedArray = [responseObject sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_TITLE ascending: true]]];
-                break;
-            case 1:
-                sortedArray = [responseObject sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_DATE_PUBLISHED ascending: false]]];
-                break;
-            default:
-                break;
-        }
-        
-        self.photosArray = sortedArray;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.photosArray = [self sortArray:responseObject withMode:self.sortMethod.selectedSegmentIndex];
+        });
     } fail:^(NSError *error) {
         NSLog(@"searching error: %@", [error localizedDescription]);
     }];
@@ -80,20 +75,26 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 
 - (IBAction)sortMethodChanged:(id)sender
 {
+    self.photosArray = [self sortArray:self.photosArray withMode:self.sortMethod.selectedSegmentIndex];
+}
+
+- (NSArray *)sortArray:(NSArray *)array withMode:(NSInteger)mode
+{
     NSArray *sortedArray = nil;
     
-    switch (self.sortMethod.selectedSegmentIndex) {
+    switch (mode)
+    {
         case 0:
-            sortedArray = [self.photosArray sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_TITLE ascending: true]]];
+            sortedArray = [array sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_TITLE ascending: true]]];
             break;
         case 1:
-            sortedArray = [self.photosArray sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_DATE_PUBLISHED ascending: false]]];
+            sortedArray = [array sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_DATE_PUBLISHED ascending: false]]];
             break;
         default:
             break;
     }
     
-    self.photosArray = sortedArray;
+    return sortedArray;
 }
 
 #pragma mark - Table view data source
@@ -115,9 +116,9 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
     
     NSDictionary *photo = self.photosArray[indexPath.row];
     
-    cell.titleStr = photo[FLICKR_PHOTO_TITLE];
-    cell.dateStr = photo[FLICKR_PHOTO_DATE_PUBLISHED];
-    cell.tagsStr = photo[FLICKR_PHOTO_TAGS];
+    cell.titleStr = [FlickrPhotoObject TitleKeyForPhoto:photo];
+    cell.dateStr = [FlickrPhotoObject DatePublishedKeyForPhoto:photo];
+    cell.tagsStr = [FlickrPhotoObject TagsKeyForPhoto:photo];
     
     return cell;
 }
@@ -134,7 +135,7 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
             id destVC = segue.destinationViewController;
             
             NSDictionary *photo = self.photosArray[path.row];
-            NSURL *photoURL = [self.photoManager URLforDownloadingPhoto:photo];
+            NSURL *photoURL = [FlickrPhotoObject URLforDownloadingPhoto:photo];
             
             [destVC setValue:photoURL forKey:@"photoURL"];
         }
