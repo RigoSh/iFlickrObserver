@@ -109,6 +109,12 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
     return self.photosArray.count;
 }
 
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    
+    [textField resignFirstResponder];
+    return YES;
+}
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
