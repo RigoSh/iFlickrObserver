@@ -10,24 +10,24 @@
 
 @implementation FlickrPhotoObject
 
-+ (NSURL *)URLforDownloadingPhoto:(NSDictionary *)photo
+- (id)initWithObject:(NSDictionary *)object
 {
-    return [FlickrProvider getURLforDownloadingPhoto:photo];
-}
-
-+ (NSString *)TitleKeyForPhoto:(NSDictionary *)photo
-{
-    return photo[FLICKR_PHOTO_TITLE];
-}
-
-+ (NSString *)TagsKeyForPhoto:(NSDictionary *)photo
-{
-    return photo[FLICKR_PHOTO_TAGS];
-}
-
-+ (NSString *)DatePublishedKeyForPhoto:(NSDictionary *)photo
-{
-    return photo[FLICKR_PHOTO_DATE_PUBLISHED];
+    if(self = [super init])
+    {
+        _title = object[FLICKR_PHOTO_TITLE];
+        _tags = object[FLICKR_PHOTO_TAGS];
+        _imageURLString = object[FLICKR_PHOTO_IMAGE];
+        
+        NSString *dateStrSince1970 = object[FLICKR_PHOTO_DATE_PUBLISHED];
+        NSDate *date = [NSDate dateWithTimeIntervalSince1970:[dateStrSince1970 integerValue]];
+        
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"dd.MM.yyyy HH:mm"];
+        
+        _datePublished = [formatter stringFromDate:date];
+    }
+    
+    return self;
 }
 
 @end

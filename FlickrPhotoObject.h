@@ -12,10 +12,12 @@
 
 @interface FlickrPhotoObject : NSObject
 
-+ (NSURL *)URLforDownloadingPhoto:(NSDictionary *)photo;
+- (id)initWithObject:(NSDictionary *)object;
 
-+ (NSString *)TitleKeyForPhoto:(NSDictionary *)photo;
-+ (NSString *)TagsKeyForPhoto:(NSDictionary *)photo;
-+ (NSString *)DatePublishedKeyForPhoto:(NSDictionary *)photo;
+@property (nonatomic, readonly, copy) NSString *title;
+@property (nonatomic, readonly, copy) NSString *tags;
+@property (nonatomic, readonly, copy) NSString *datePublished;
+@property (nonatomic, readonly, copy) NSString *imageURLString;
+@property (nonatomic, strong) NSData *imageData;
 
 @end

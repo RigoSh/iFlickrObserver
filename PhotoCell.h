@@ -13,5 +13,8 @@
 @property (copy, nonatomic) NSString *titleStr;
 @property (copy, nonatomic) NSString *dateStr;
 @property (copy, nonatomic) NSString *tagsStr;
+@property (strong, nonatomic) UIImage *photoImage;
+
+@property (assign, nonatomic) BOOL shouldStartPhotoIndicator;
 
 @end

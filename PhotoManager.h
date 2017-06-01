@@ -13,7 +13,13 @@
 + (instancetype)sharedInstance;
 
 - (void)fetchPhotosWithTags:(NSString *)tags
-                     success:(void(^)(id responseObject))handler
-                        fail:(void(^)(NSError *error))error;
+                andSortMode:(NSInteger)mode
+                 andPageNum:(NSInteger)pageNum
+                    success:(void(^)(id responseObject))successHandler
+                       fail:(void(^)(NSError *error))failHandler;
+
+- (void)downloadImageFromURL:(NSString *)urlString
+                     success:(void(^)(id responseObject))successHandler
+                        fail:(void(^)(NSError *error))failHandler;
 
 @end

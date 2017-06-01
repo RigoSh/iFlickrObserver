@@ -22,18 +22,21 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 @property (weak, nonatomic) IBOutlet UISegmentedControl *sortMethod;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *searchIndicator;
 
-@property (strong, nonatomic) NSArray *photosArray;
-@property (strong, nonatomic) PhotoManager *photoManager;
-
 @end
 
 @implementation FlickrViewController
+{
+    NSMutableArray *_photosArray;
+    PhotoManager *_photoManager;
+    NSInteger _pageNum;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
-    self.photoManager = [PhotoManager sharedInstance];
+    _photoManager = [PhotoManager sharedInstance];
+    _photosArray = [NSMutableArray new];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -43,58 +46,53 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 
 #pragma mark - internal functions
 
-- (void)setPhotosArray:(NSArray *)photosArray
-{
-    [self.searchIndicator stopAnimating];
-    
-    _photosArray = photosArray;
-    [self.tableView reloadData];
-}
-
 - (IBAction)searchButtonPressed:(id)sender
 {
-    self.photosArray = nil;
+    [self.searchTextField resignFirstResponder];
+    [self firstPageDownloading];
+}
+
+- (void)firstPageDownloading
+{
+    _pageNum = 1;
+    
+    [_photosArray removeAllObjects];
+    [self.tableView reloadData];
     
     NSString *searchingString = [self.searchTextField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     
-    if(0 == searchingString.length)
+    if(searchingString.length != 0)
     {
-        return;
+        [self downloadPageAtNumber:_pageNum];
     }
-    
+}
+
+- (void)nextPageDownloading
+{
+    [self downloadPageAtNumber:_pageNum+1];
+}
+
+- (void)downloadPageAtNumber:(NSInteger)pageNumber
+{
     [self.searchIndicator startAnimating];
     
-    [self.photoManager fetchPhotosWithTags:searchingString success:^(id responseObject) {
+    [_photoManager fetchPhotosWithTags:self.searchTextField.text andSortMode:self.sortMethod.selectedSegmentIndex andPageNum:_pageNum success:^(id responseObject) {
+        
+        for (NSDictionary *object in responseObject)
+        {
+            FlickrPhotoObject *newPhoto = [[FlickrPhotoObject alloc] initWithObject:object];
+            [_photosArray addObject:newPhoto];
+        }
+        _pageNum++;
+        
         dispatch_async(dispatch_get_main_queue(), ^{
-            self.photosArray = [self sortArray:responseObject withMode:self.sortMethod.selectedSegmentIndex];
+            [self.searchIndicator stopAnimating];
+            [self.tableView reloadData];
         });
     } fail:^(NSError *error) {
+        [self.searchIndicator stopAnimating];
         NSLog(@"searching error: %@", [error localizedDescription]);
     }];
-}
-
-- (IBAction)sortMethodChanged:(id)sender
-{
-    self.photosArray = [self sortArray:self.photosArray withMode:self.sortMethod.selectedSegmentIndex];
-}
-
-- (NSArray *)sortArray:(NSArray *)array withMode:(NSInteger)mode
-{
-    NSArray *sortedArray = nil;
-    
-    switch (mode)
-    {
-        case 0:
-            sortedArray = [array sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_TITLE ascending: true]]];
-            break;
-        case 1:
-            sortedArray = [array sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:FLICKR_PHOTO_DATE_PUBLISHED ascending: false]]];
-            break;
-        default:
-            break;
-    }
-    
-    return sortedArray;
 }
 
 #pragma mark - Table view data source
@@ -106,13 +104,14 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return self.photosArray.count;
+    return _photosArray.count;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    
     [textField resignFirstResponder];
+    [self firstPageDownloading];
+    
     return YES;
 }
 
@@ -120,13 +119,51 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
     
     PhotoCell *cell = [tableView dequeueReusableCellWithIdentifier:key_photoID forIndexPath:indexPath];
     
-    NSDictionary *photo = self.photosArray[indexPath.row];
+    FlickrPhotoObject *photo = _photosArray[indexPath.row];
     
-    cell.titleStr = [FlickrPhotoObject TitleKeyForPhoto:photo];
-    cell.dateStr = [FlickrPhotoObject DatePublishedKeyForPhoto:photo];
-    cell.tagsStr = [FlickrPhotoObject TagsKeyForPhoto:photo];
+    cell.titleStr = photo.title;
+    cell.dateStr = photo.datePublished;
+    cell.tagsStr = photo.tags;
+    cell.photoImage = nil;
+    
+    if(photo.imageURLString)
+    {
+        if(photo.imageData)
+        {
+            cell.photoImage = [UIImage imageWithData:photo.imageData];
+        }
+        else
+        {
+            cell.shouldStartPhotoIndicator = YES;
+            
+            [_photoManager downloadImageFromURL:photo.imageURLString success:^(id responseObject) {
+                photo.imageData = responseObject;
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    cell.shouldStartPhotoIndicator = NO;
+                    cell.photoImage = [UIImage imageWithData:responseObject];
+                });
+            } fail:^(NSError *error) {
+                NSLog(@"downloading error: %@", [error localizedDescription]);
+            }];
+        }
+    }
+    else
+    {
+        cell.photoImage = [UIImage imageNamed:@"photo-empty"];
+    }
     
     return cell;
+}
+
+#pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if([indexPath row] == (_photosArray.count - 1))
+    {
+        [self nextPageDownloading];
+    }
 }
 
 // In a storyboard-based application, you will often want to do a little preparation before navigation
@@ -140,10 +177,9 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
         {
             id destVC = segue.destinationViewController;
             
-            NSDictionary *photo = self.photosArray[path.row];
-            NSURL *photoURL = [FlickrPhotoObject URLforDownloadingPhoto:photo];
+            FlickrPhotoObject *photo = _photosArray[path.row];
             
-            [destVC setValue:photoURL forKey:@"photoURL"];
+            [destVC setValue:photo forKey:@"photoObject"];
         }
     }
 }

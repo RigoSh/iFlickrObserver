@@ -7,24 +7,27 @@
 //
 
 #import "DetailPhotoViewController.h"
+#import "PhotoManager.h"
 
 @interface DetailPhotoViewController ()
 
 @property (weak, nonatomic) IBOutlet UIImageView *photoImageView;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *indicatorView;
 
-@property (strong, nonatomic) UIImage *photoImage;
-
 @end
 
 @implementation DetailPhotoViewController
+{
+    PhotoManager *_photoManager;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    self.navigationItem.backBarButtonItem.title = @"назад";
     
-    [self downloadingPhoto];
+    _photoManager = [PhotoManager sharedInstance];
+    
+    [self showPhoto];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -32,35 +35,26 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (void)setPhotoImage:(UIImage *)photoImage
+- (void)showPhoto
 {
-    [self.indicatorView stopAnimating];
-    
-    self.photoImageView.image = photoImage;
-}
-
-- (void)downloadingPhoto
-{
-    self.photoImage = nil;
-    
-    if(self.photoURL)
+    if(self.photoObject.imageData)
+    {
+        self.photoImageView.image = [UIImage imageWithData:self.photoObject.imageData];
+    }
+    else
     {
         [self.indicatorView startAnimating];
         
-        NSURLRequest *request = [NSURLRequest requestWithURL:self.photoURL];
-        NSURLSession *session = [NSURLSession sharedSession];
-        
-        NSURLSessionDownloadTask *task = [session downloadTaskWithRequest:request completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            if(!error)
-            {
-                UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:location]];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    self.photoImage = image;
-                });
-            }
+        [_photoManager downloadImageFromURL:self.photoObject.imageURLString success:^(id responseObject) {
+            self.photoObject.imageData = responseObject;
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.indicatorView stopAnimating];
+                self.photoImageView.image = [UIImage imageWithData:responseObject];
+            });
+        } fail:^(NSError *error) {
+            NSLog(@"downloading error: %@", [error localizedDescription]);
         }];
-        
-        [task resume];
     }
 }
 

@@ -10,24 +10,20 @@
 
 @implementation FlickrProvider
 
-+ (NSURL *)URLForQuery:(NSString *)query
++ (NSURL *)URLforSearchWithTags:(NSString *)tags
+                    andSortMode:(NSInteger)mode
+                     andPageNum:(NSInteger)pageNum
 {
-    query = [NSString stringWithFormat:@"%@&format=json&nojsoncallback=1&tagmode=any", query];
-    NSCharacterSet *set = [NSCharacterSet URLQueryAllowedCharacterSet];
+    NSString *trimTags = [tags stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    NSString *sort = (mode ? @"date-posted-desc" : @"relevance");
     
+    NSString *query = [NSString stringWithFormat:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=%@&page=%ld&tags=%@&tag_mode=any&sort=%@&media=photos&extras=tags, url_m, date_upload&per_page=%@&format=json&nojsoncallback=1", FLICKR_API_KEY, (long)pageNum, trimTags, sort, FLCIKR_PHOTO_COUNT];
+    
+    NSCharacterSet *set = [NSCharacterSet URLQueryAllowedCharacterSet];
     query = [query stringByAddingPercentEncodingWithAllowedCharacters:set];        //NSUTF8StringEncoding
     
     return [NSURL URLWithString:query];
 }
 
-+ (NSURL *)URLforSearchWithTags:(NSString *)tags
-{
-    return [self URLForQuery:[NSString stringWithFormat:@"https://api.flickr.com/services/feeds/photos_public.gne/?tags=%@", tags]];
-}
-
-+ (NSURL *)getURLforDownloadingPhoto:(NSDictionary *)photo
-{
-    return [NSURL URLWithString:[photo valueForKeyPath:FLICKR_PHOTO_MEDIA]];
-}
 
 @end

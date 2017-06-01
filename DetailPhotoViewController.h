@@ -7,9 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "FlickrPhotoObject.h"
 
 @interface DetailPhotoViewController : UIViewController
 
-@property (strong, nonatomic) NSURL* photoURL;
+@property (weak, nonatomic) FlickrPhotoObject *photoObject;
 
 @end

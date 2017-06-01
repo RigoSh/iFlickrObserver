@@ -25,10 +25,12 @@
 }
 
 - (void)fetchPhotosWithTags:(NSString *)tags
-                     success:(void(^)(id responseObject))successHandler
-                        fail:(void(^)(NSError *error))failHandler
+                andSortMode:(NSInteger)mode
+                 andPageNum:(NSInteger)pageNum
+                    success:(void(^)(id responseObject))successHandler
+                       fail:(void(^)(NSError *error))failHandler
 {
-    NSURL *searchURL = [FlickrProvider URLforSearchWithTags:tags];
+    NSURL *searchURL = [FlickrProvider URLforSearchWithTags:tags andSortMode:mode andPageNum:pageNum];
     
     NSURLSession *session = [NSURLSession sharedSession];
     NSURLSessionDownloadTask *task = [session downloadTaskWithURL:searchURL completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
@@ -41,6 +43,29 @@
             NSArray *photoItems = [resultDict valueForKeyPath:FLICKR_PHOTOS];
             
             successHandler(photoItems);
+        }
+        else
+        {
+            failHandler(error);
+        }
+    }];
+    
+    [task resume];
+}
+
+- (void)downloadImageFromURL:(NSString *)urlString
+                     success:(void(^)(id responseObject))successHandler
+                        fail:(void(^)(NSError *error))failHandler
+{
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]];
+    NSURLSession *session = [NSURLSession sharedSession];
+    
+    NSURLSessionDownloadTask *task = [session downloadTaskWithRequest:request completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+        if(!error)
+        {
+            NSData *imageData = [NSData dataWithContentsOfURL:location];
+            successHandler(imageData);
         }
         else
         {
