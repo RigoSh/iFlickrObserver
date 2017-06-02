@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-#define FLICKR_API_KEY @"04eb22e333553d6354fe9ad8344ae2bf"
+#define FLICKR_API_KEY @"d37ed738a2133355d6e7cb07ff0c5d50"
 #define FLCIKR_PHOTO_COUNT @10
 
 #define FLICKR_PHOTOS @"photos.photo"
