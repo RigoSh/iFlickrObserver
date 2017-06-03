@@ -152,7 +152,7 @@ static NSString* const key_photoSegueID = @"DetailPhotoSegueID";
     {
         cell.photoImage = [UIImage imageNamed:@"photo-empty"];
     }
-    
+        
     return cell;
 }
 

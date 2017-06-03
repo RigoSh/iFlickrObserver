@@ -19,6 +19,7 @@
 @implementation DetailPhotoViewController
 {
     PhotoManager *_photoManager;
+    UIDocumentInteractionController *_photoDIC;
 }
 
 - (void)viewDidLoad {
@@ -26,6 +27,7 @@
     // Do any additional setup after loading the view.
     
     _photoManager = [PhotoManager sharedInstance];
+    _photoDIC = [UIDocumentInteractionController new];
     
     [self showPhoto];
 }
@@ -55,6 +57,27 @@
         } fail:^(NSError *error) {
             NSLog(@"downloading error: %@", [error localizedDescription]);
         }];
+    }
+}
+
+- (IBAction)sharePhoto:(id)sender
+{
+    if(self.photoObject.imageData)
+    {
+        NSString *basePath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+        NSString *sharedImageFileName = @"temporary_shared_image.png";
+        
+        if([self.photoObject.imageData writeToFile:[basePath stringByAppendingPathComponent:sharedImageFileName] atomically:YES])
+        {
+            NSURL* documentsUrl = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+            NSURL* sharedImageUrl = [documentsUrl URLByAppendingPathComponent:sharedImageFileName];
+
+            if(sharedImageUrl)
+            {
+                _photoDIC.URL = sharedImageUrl;
+                [_photoDIC presentOptionsMenuFromBarButtonItem:sender animated:YES];
+            }
+        }
     }
 }
 

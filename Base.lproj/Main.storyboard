@@ -35,6 +35,11 @@
                     </view>
                     <navigationItem key="navigationItem" title="Фотография" id="wZa-2I-lwB">
                         <barButtonItem key="backBarButtonItem" title="назад" id="dLI-qf-dbF"/>
+                        <barButtonItem key="rightBarButtonItem" image="share-arrow.png" id="Ybq-hX-j4X">
+                            <connections>
+                                <action selector="sharePhoto:" destination="RVa-Qg-5Dt" id="J4b-KA-SkK"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
                         <outlet property="indicatorView" destination="nww-fq-Sve" id="mCG-Ry-zjt"/>
@@ -87,7 +92,7 @@
                                             <segment title="дата загрузки"/>
                                         </segments>
                                     </segmentedControl>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Сортировка запроса" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iOS-bH-OJQ">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Искать по:" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iOS-bH-OJQ">
                                         <rect key="frame" x="8" y="52" width="90" height="36"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
@@ -200,5 +205,6 @@
     </scenes>
     <resources>
         <image name="search-icon.png" width="24" height="24"/>
+        <image name="share-arrow.png" width="24" height="24"/>
     </resources>
 </document>
